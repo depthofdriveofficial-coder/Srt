@@ -3,35 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Subtitle Test</title>
+<title>Subtitle Finder</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0f0e17; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-  h1 { font-size: 20px; margin-bottom: 20px; background: linear-gradient(90deg,#6c63ff,#ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  input { width: 100%; background: #1a1a2e; border: 1px solid #6c63ff55; border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; margin-bottom: 10px; }
-  button { width: 100%; background: linear-gradient(135deg,#6c63ff,#ff6584); border: none; border-radius: 12px; padding: 12px; color: white; font-size: 15px; cursor: pointer; margin-bottom: 20px; }
-  #result { background: #1a1a2e; border-radius: 12px; padding: 16px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; min-height: 100px; color: #ffffffcc; }
+  h1 { font-size: 22px; margin-bottom: 20px; background: linear-gradient(90deg,#6c63ff,#ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .search { display: flex; gap: 10px; margin-bottom: 20px; }
+  input { flex: 1; background: #1a1a2e; border: 1px solid #6c63ff55; border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; }
+  button { background: linear-gradient(135deg,#6c63ff,#ff6584); border: none; border-radius: 12px; padding: 12px 20px; color: white; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .card { background: #1a1a2e; border-radius: 12px; padding: 14px; margin-bottom: 10px; border: 1px solid #ffffff10; }
+  .lang { color: #ff6584; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .name { font-size: 13px; color: #ffffffcc; margin-bottom: 8px; }
+  .dl-btn { background: #6c63ff22; border: 1px solid #6c63ff55; border-radius: 8px; padding: 6px 14px; color: #6c63ff; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .status { color: #ffffff55; font-size: 13px; padding: 10px 0; }
+  .movie-link { color: #ff6584; font-size: 12px; margin-bottom: 16px; display: block; }
 </style>
 </head>
 <body>
-<h1>🎬 Subtitle Test</h1>
-<input id="movie" placeholder="Movie name likho... (e.g. Inception)" />
-<button onclick="test()">Search</button>
-<div id="result">Result yahan aayega...</div>
+<h1>🎬 Subtitle Finder</h1>
+<div class="search">
+  <input id="movie" placeholder="Movie name likho... (e.g. Inception)" onkeydown="if(event.key==='Enter')search()">
+  <button onclick="search()">Search</button>
+</div>
+<div id="result"></div>
+
 <script>
-async function test() {
+async function search() {
   const movie = document.getElementById('movie').value.trim();
   if (!movie) return;
-  document.getElementById('result').textContent = 'Searching...';
+  document.getElementById('result').innerHTML = '<p class="status">Searching...</p>';
+  
   try {
     const res = await fetch('/api/subtitle?movie=' + encodeURIComponent(movie));
     const data = await res.json();
-    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    
+    if (data.error && !data.results) {
+      document.getElementById('result').innerHTML = '<p class="status">❌ ' + data.error + '</p>';
+      return;
+    }
+
+    let html = '';
+    if (data.movie_page) {
+      html += `<a class="movie-link" href="${data.movie_page}" target="_blank">🔗 Full page dekhein</a>`;
+    }
+
+    if (data.results && data.results.length > 0) {
+      data.results.forEach(r => {
+        html += `<div class="card">
+          <div class="lang">${r.language}</div>
+          <div class="name">${r.name}</div>
+          <a class="dl-btn" href="${r.url}" target="_blank">⬇️ Download SRT</a>
+        </div>`;
+      });
+    } else {
+      html += '<p class="status">Koi subtitle nahi mili</p>';
+    }
+
+    document.getElementById('result').innerHTML = html;
   } catch(e) {
-    document.getElementById('result').textContent = 'Error: ' + e.message;
+    document.getElementById('result').innerHTML = '<p class="status">❌ Error: ' + e.message + '</p>';
   }
 }
 </script>
 </body>
 </html>
-
