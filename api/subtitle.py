@@ -1,5 +1,5 @@
 from http.server import BaseHTTPRequestHandler
-import urllib.request, urllib.parse, json, os
+import http.client, urllib.parse, json
 from urllib.parse import urlparse, parse_qs
 
 class handler(BaseHTTPRequestHandler):
@@ -8,15 +8,16 @@ class handler(BaseHTTPRequestHandler):
             query = parse_qs(urlparse(self.path).query)
             movie = query.get('movie', ['Inception'])[0]
 
-            url = f"https://rest.opensubtitles.org/search/query-{urllib.parse.quote(movie)}/sublanguageid-eng"
+            path = f"/search/query-{urllib.parse.quote(movie)}/sublanguageid-eng"
             
-            req = urllib.request.Request(url, headers={
+            conn = http.client.HTTPSConnection("rest.opensubtitles.org")
+            conn.request("GET", path, headers={
                 'User-Agent': 'TemporaryUserAgent',
                 'X-User-Agent': 'TemporaryUserAgent'
             })
             
-            with urllib.request.urlopen(req, timeout=8) as res:
-                data = json.loads(res.read().decode())
+            res = conn.getresponse()
+            data = json.loads(res.read().decode())
 
             results = []
             for item in data[:3]:
@@ -39,4 +40,3 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({'error': str(e)}).encode())
-
