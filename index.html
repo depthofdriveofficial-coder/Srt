@@ -6,62 +6,81 @@
 <title>Subtitle Finder</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f0e17; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-  h1 { font-size: 22px; margin-bottom: 20px; background: linear-gradient(90deg,#6c63ff,#ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .search { display: flex; gap: 10px; margin-bottom: 20px; }
-  input { flex: 1; background: #1a1a2e; border: 1px solid #6c63ff55; border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; }
-  button { background: linear-gradient(135deg,#6c63ff,#ff6584); border: none; border-radius: 12px; padding: 12px 20px; color: white; font-size: 14px; cursor: pointer; white-space: nowrap; }
-  .card { background: #1a1a2e; border-radius: 12px; padding: 14px; margin-bottom: 10px; border: 1px solid #ffffff10; }
-  .lang { color: #ff6584; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-  .name { font-size: 13px; color: #ffffffcc; margin-bottom: 8px; }
-  .dl-btn { background: #6c63ff22; border: 1px solid #6c63ff55; border-radius: 8px; padding: 6px 14px; color: #6c63ff; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
-  .status { color: #ffffff55; font-size: 13px; padding: 10px 0; }
-  .movie-link { color: #ff6584; font-size: 12px; margin-bottom: 16px; display: block; }
+  body { background: #0f0e17; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; min-height: 100vh; }
+  h1 { font-size: 22px; margin-bottom: 6px; background: linear-gradient(90deg,#6c63ff,#ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
+  p.sub { color: #ffffff44; font-size: 13px; margin-bottom: 20px; }
+  .row { display: flex; gap: 10px; margin-bottom: 10px; }
+  input, select { background: #1a1a2e; border: 1px solid #6c63ff44; border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; }
+  input { flex: 1; }
+  select { min-width: 120px; }
+  button { background: linear-gradient(135deg,#6c63ff,#ff6584); border: none; border-radius: 12px; padding: 12px 22px; color: white; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .card { background: #1a1a2e; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid #ffffff08; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .info .lang { color: #ff6584; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .info .name { font-size: 13px; color: #ffffffcc; }
+  .dl { background: #6c63ff22; border: 1px solid #6c63ff55; border-radius: 8px; padding: 8px 14px; color: #6c63ff; font-size: 12px; text-decoration: none; white-space: nowrap; font-weight: 600; }
+  .status { color: #ffffff44; font-size: 13px; padding: 16px 0; text-align: center; }
 </style>
 </head>
 <body>
 <h1>🎬 Subtitle Finder</h1>
-<div class="search">
-  <input id="movie" placeholder="Movie name likho... (e.g. Inception)" onkeydown="if(event.key==='Enter')search()">
-  <button onclick="search()">Search</button>
+<p class="sub">Movie ka naam likho aur SRT download karo</p>
+
+<div class="row">
+  <input id="movie" placeholder="Movie name... (e.g. Inception)" onkeydown="if(event.key==='Enter')search()">
+  <select id="lang">
+    <option value="EN">English</option>
+    <option value="AR">Arabic</option>
+    <option value="FR">French</option>
+    <option value="DE">German</option>
+    <option value="ES">Spanish</option>
+    <option value="IT">Italian</option>
+    <option value="PT">Portuguese</option>
+    <option value="RU">Russian</option>
+    <option value="TR">Turkish</option>
+    <option value="HI">Hindi</option>
+    <option value="BN">Bengali</option>
+  </select>
 </div>
+<button onclick="search()" style="width:100%;margin-bottom:20px">Search Subtitles</button>
+
 <div id="result"></div>
 
 <script>
 async function search() {
   const movie = document.getElementById('movie').value.trim();
+  const lang = document.getElementById('lang').value;
   if (!movie) return;
-  document.getElementById('result').innerHTML = '<p class="status">Searching...</p>';
+  
+  document.getElementById('result').innerHTML = '<p class="status">⏳ Searching...</p>';
   
   try {
-    const res = await fetch('/api/subtitle?movie=' + encodeURIComponent(movie));
+    const res = await fetch(`/api/subtitle?movie=${encodeURIComponent(movie)}&lang=${lang}`);
     const data = await res.json();
     
-    if (data.error && !data.results) {
-      document.getElementById('result').innerHTML = '<p class="status">❌ ' + data.error + '</p>';
+    if (data.error) {
+      document.getElementById('result').innerHTML = `<p class="status">❌ ${data.error}</p>`;
       return;
     }
 
-    let html = '';
-    if (data.movie_page) {
-      html += `<a class="movie-link" href="${data.movie_page}" target="_blank">🔗 Full page dekhein</a>`;
+    if (!data.results || data.results.length === 0) {
+      document.getElementById('result').innerHTML = '<p class="status">Koi subtitle nahi mili 😕</p>';
+      return;
     }
 
-    if (data.results && data.results.length > 0) {
-      data.results.forEach(r => {
-        html += `<div class="card">
+    let html = `<p class="status" style="text-align:left;margin-bottom:12px">${data.results.length} subtitles mile</p>`;
+    data.results.forEach(r => {
+      html += `<div class="card">
+        <div class="info">
           <div class="lang">${r.language}</div>
-          <div class="name">${r.name}</div>
-          <a class="dl-btn" href="${r.url}" target="_blank">⬇️ Download SRT</a>
-        </div>`;
-      });
-    } else {
-      html += '<p class="status">Koi subtitle nahi mili</p>';
-    }
-
+          <div class="name">${r.name || 'Subtitle'}</div>
+        </div>
+        <a class="dl" href="${r.url}" target="_blank">⬇ Download</a>
+      </div>`;
+    });
     document.getElementById('result').innerHTML = html;
+
   } catch(e) {
-    document.getElementById('result').innerHTML = '<p class="status">❌ Error: ' + e.message + '</p>';
+    document.getElementById('result').innerHTML = `<p class="status">❌ Error: ${e.message}</p>`;
   }
 }
 </script>
