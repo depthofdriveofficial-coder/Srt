@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subtitle Test</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f0e17; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+  h1 { font-size: 20px; margin-bottom: 20px; background: linear-gradient(90deg,#6c63ff,#ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  input { width: 100%; background: #1a1a2e; border: 1px solid #6c63ff55; border-radius: 12px; padding: 12px 16px; color: white; font-size: 14px; outline: none; margin-bottom: 10px; }
+  button { width: 100%; background: linear-gradient(135deg,#6c63ff,#ff6584); border: none; border-radius: 12px; padding: 12px; color: white; font-size: 15px; cursor: pointer; margin-bottom: 20px; }
+  #result { background: #1a1a2e; border-radius: 12px; padding: 16px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; min-height: 100px; color: #ffffffcc; }
+</style>
+</head>
+<body>
+<h1>🎬 Subtitle Test</h1>
+<input id="movie" placeholder="Movie name likho... (e.g. Inception)" />
+<button onclick="test()">Search</button>
+<div id="result">Result yahan aayega...</div>
+<script>
+async function test() {
+  const movie = document.getElementById('movie').value.trim();
+  if (!movie) return;
+  document.getElementById('result').textContent = 'Searching...';
+  try {
+    const res = await fetch('/api/subtitle?movie=' + encodeURIComponent(movie));
+    const data = await res.json();
+    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    document.getElementById('result').textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
+
