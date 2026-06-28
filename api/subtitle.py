@@ -17,22 +17,17 @@ class handler(BaseHTTPRequestHandler):
             })
             
             res = conn.getresponse()
-            data = json.loads(res.read().decode())
-
-            results = []
-            for item in data[:3]:
-                results.append({
-                    'title': item.get('MovieName'),
-                    'year': item.get('MovieYear'),
-                    'language': item.get('LanguageName'),
-                    'download': item.get('SubDownloadLink')
-                })
+            status = res.status
+            raw = res.read().decode('utf-8', errors='ignore')
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({'results': results, 'total': len(data)}).encode())
+            self.wfile.write(json.dumps({
+                'status': status,
+                'raw': raw[:500]
+            }).encode())
 
         except Exception as e:
             self.send_response(500)
