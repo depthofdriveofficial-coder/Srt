@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/subtitle", "destination": "/api/subtitle.py" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
