@@ -8,28 +8,18 @@ class handler(BaseHTTPRequestHandler):
             query = parse_qs(urlparse(self.path).query)
             movie = query.get('movie', ['Inception'])[0]
 
-            path = f"/search/query-{urllib.parse.quote(movie)}/sublanguageid-eng"
+            path = f"/en/search-movie/{urllib.parse.quote(movie)}/1"
             
-            # First request
-            conn = http.client.HTTPSConnection("rest.opensubtitles.org")
+            conn = http.client.HTTPSConnection("my-subs.co")
             conn.request("GET", path, headers={
-                'User-Agent': 'TemporaryUserAgent',
-                'X-User-Agent': 'TemporaryUserAgent'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+                'Accept-Language': 'en-US,en;q=0.9',
             })
-            res = conn.getresponse()
             
-            # Follow redirect if 302
-            if res.status == 302:
-                location = res.getheader('Location')
-                parsed = urlparse(location)
-                conn2 = http.client.HTTPSConnection(parsed.netloc)
-                conn2.request("GET", parsed.path + ('?' + parsed.query if parsed.query else ''), headers={
-                    'User-Agent': 'TemporaryUserAgent',
-                    'X-User-Agent': 'TemporaryUserAgent'
-                })
-                res = conn2.getresponse()
-
+            res = conn.getresponse()
             status = res.status
+            location = res.getheader('Location', '')
             raw = res.read().decode('utf-8', errors='ignore')
 
             self.send_response(200)
@@ -38,6 +28,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 'status': status,
+                'location': location,
                 'raw': raw[:1000]
             }).encode())
 
