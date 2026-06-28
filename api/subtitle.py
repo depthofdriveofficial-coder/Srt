@@ -10,13 +10,25 @@ class handler(BaseHTTPRequestHandler):
 
             path = f"/search/query-{urllib.parse.quote(movie)}/sublanguageid-eng"
             
+            # First request
             conn = http.client.HTTPSConnection("rest.opensubtitles.org")
             conn.request("GET", path, headers={
                 'User-Agent': 'TemporaryUserAgent',
                 'X-User-Agent': 'TemporaryUserAgent'
             })
-            
             res = conn.getresponse()
+            
+            # Follow redirect if 302
+            if res.status == 302:
+                location = res.getheader('Location')
+                parsed = urlparse(location)
+                conn2 = http.client.HTTPSConnection(parsed.netloc)
+                conn2.request("GET", parsed.path + ('?' + parsed.query if parsed.query else ''), headers={
+                    'User-Agent': 'TemporaryUserAgent',
+                    'X-User-Agent': 'TemporaryUserAgent'
+                })
+                res = conn2.getresponse()
+
             status = res.status
             raw = res.read().decode('utf-8', errors='ignore')
 
@@ -26,7 +38,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 'status': status,
-                'raw': raw[:500]
+                'raw': raw[:1000]
             }).encode())
 
         except Exception as e:
